@@ -9,3 +9,14 @@ node_modules/
 .env
 
 .DS_Store
+vincent-packages/tools/dex-aggregator/dist/generated/lit-action.d.ts
+/vincent-packages/tools/dex-aggregator/dist
+/vincent-packages/tools/dex-aggregator/src/generated
+vincent-packages/tools/dex-aggregator/esBuildMetafile.json
+vincent-packages/tools/dex-aggregator/yarn.lock
+/vincent-packages/tools/dca-limit-order/dist
+/vincent-packages/tools/dca-limit-order/src/generated
+vincent-packages/tools/dca-limit-order/esBuildMetafile.json
+/vincent-packages/tools/portfolio-rebalancer/dist
+vincent-packages/tools/portfolio-rebalancer/esBuildMetafile.json
+/vincent-packages/tools/portfolio-rebalancer/src/generated

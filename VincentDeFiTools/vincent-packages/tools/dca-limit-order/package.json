@@ -1,0 +1,43 @@
+{
+  "name": "@lit-protocol/vincent-tool-dca-limit-order",
+  "version": "0.0.1",
+  "description": "Dollar-Cost Averaging (DCA) and Limit Order tool for Vincent DeFi ecosystem",
+  "main": "dist/src/index.js",
+  "module": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "npm run action:build && tsc && npm run action:deploy",
+    "action:build": "vincent-scaffold pkg build",
+    "action:deploy": "sh -c '[ -f .env ] && dotenv -e .env -- vincent-scaffold pkg deploy || dotenv -e ../../../.env -- vincent-scaffold pkg deploy'",
+    "clean": "vincent-scaffold pkg clean"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@lit-protocol/vincent-scaffold-sdk": "^1.1.6",
+    "@lit-protocol/vincent-tool-sdk": "^1.0.2",
+    "alchemy-sdk": "^3.6.1",
+    "ethers": "^5.7.2",
+    "zod": "^3.22.4"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "require": "./dist/src/index.js"
+    },
+    "./action": "./src/generated/lit-action.js"
+  },
+  "files": [
+    "dist",
+    "src/generated"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
