@@ -1,1 +1,4 @@
 /recall/docs
+/recall/.venv
+recall/.env
+/recall/__pycache__
