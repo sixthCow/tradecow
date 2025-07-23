@@ -23,6 +23,8 @@ Automatically rebalances cryptocurrency portfolios across multiple blockchains u
 - Gas optimization
 - Comprehensive validation
 
+[Lit Explorer](https://explorer.litprotocol.com/ipfs/QmcnGvKG3eTGmG8rwo3o6YKWMCo4GLApo5Ne9nAx1sXvMx)
+
 [Learn more about Portfolio Rebalancer](./VincentDeFiTools/vincent-packages/tools/portfolio-rebalancer/README.md)
 
 ### DEX Aggregator
@@ -32,6 +34,8 @@ Finds and executes optimal token swaps across multiple decentralized exchanges.
 - Multi-DEX integration
 - Real-time price discovery
 
+[Lit Explorer](https://explorer.litprotocol.com/ipfs/QmRBZJVLSTy7gV7BuwAxLpst67ui2JbiePRDr1K7N61U8B)
+
 [Learn more about DEX Aggregator](./VincentDeFiTools/vincent-packages/tools/dex-aggregator/README.md)
 
 ### DCA/Limit Order Tool
@@ -40,6 +44,8 @@ Enables automated Dollar-Cost Averaging and limit order execution.
 - Price-based limit orders
 - Cross-DEX support
 - Automated scheduling
+
+[Lit Explorer](https://explorer.litprotocol.com/ipfs/QmdVEkCnChC2UihAGhEfQbcAtQCcVC3pU2RQhJQGXAqJUa)
 
 [Learn more about DCA/Limit Orders](./VincentDeFiTools/vincent-packages/tools/dca-limit-order/README.md)
 
