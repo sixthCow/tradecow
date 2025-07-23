@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
 import { ethers } from "ethers";
-import { vincentTool } from "../vincent-packages/tools/portfolio-rebalancer/src";
+import { vincentTool } from "../../vincent-packages/tools/portfolio-rebalancer/src";
 import { 
   ToolParams, 
   RebalanceStrategy,
   SUPPORTED_CHAINS 
-} from "../vincent-packages/tools/portfolio-rebalancer/src/lib/schemas";
+} from "../../vincent-packages/tools/portfolio-rebalancer/src/lib/schemas";
 
 // Test configuration
 const TEST_CONFIG = {

@@ -12,7 +12,7 @@ dotenv.config();
 suppressLitLogs(true);
 
 import { getVincentToolClient } from "@lit-protocol/vincent-app-sdk";
-import { bundledVincentTool } from "../vincent-packages/tools/dca-limit-order/dist/src";
+import { bundledVincentTool } from "../../vincent-packages/tools/dca-limit-order/dist/src";
 import {
   printTitle,
   printSubtitle,
