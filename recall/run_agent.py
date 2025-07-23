@@ -97,28 +97,86 @@ def show_portfolio(args):
     agent = BitcoinMaximalistAgent(api_key)
     
     try:
-        portfolio = agent.api.get_portfolio()
+        portfolio = agent.api.get_enhanced_portfolio()
         
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("📊 DETAILED PORTFOLIO BREAKDOWN")
-        print("="*60)
+        print("="*80)
         print(f"💰 Total Value: ${portfolio.get('totalValue', 0):.2f}")
         
         if portfolio.get('tokens'):
             print(f"\n🪙 TOKENS ({len(portfolio['tokens'])} positions):")
-            print("-" * 60)
+            print("-" * 80)
+            print(f"{'TOKEN':<8} | {'AMOUNT':>14} | {'VALUE':>10} | {'CHAIN':<12} | {'NETWORK'}")
+            print("-" * 80)
+            
             for token in portfolio['tokens']:
-                symbol = "UNKNOWN"
-                for sym, addr in Config.TOKENS.items():
-                    if addr.lower() == token['token'].lower():
-                        symbol = sym
-                        break
+                # Use API-provided information when available
+                symbol = token.get("symbol", "UNKNOWN")
+                specific_chain = token.get("specificChain", "unknown")
+                chain_type = token.get("chain_type", token.get("chain", "evm"))
                 
-                chain = token.get('chain', 'N/A')
-                print(f"  {symbol:<6} | {token['amount']:>12.6f} | "
-                      f"${token['value']:>8.2f} | {chain}")
+                # Format chain display name
+                if specific_chain == "svm":
+                    chain_display = "Solana"
+                    network_type = "SVM"
+                elif specific_chain in ["eth", "ethereum"]:
+                    chain_display = "Ethereum"
+                    network_type = "EVM"
+                elif specific_chain == "arbitrum":
+                    chain_display = "Arbitrum"
+                    network_type = "EVM"
+                elif specific_chain == "optimism":
+                    chain_display = "Optimism"
+                    network_type = "EVM"
+                elif specific_chain == "base":
+                    chain_display = "Base"
+                    network_type = "EVM"
+                elif specific_chain == "polygon":
+                    chain_display = "Polygon"
+                    network_type = "EVM"
+                else:
+                    chain_display = specific_chain.capitalize()
+                    network_type = chain_type.upper()
+                
+                # Add emoji for Bitcoin-related tokens
+                if symbol == "WBTC":
+                    display_symbol = "₿ WBTC"
+                elif symbol == "BTC":
+                    display_symbol = "₿ BTC"
+                else:
+                    display_symbol = symbol
+                
+                print(f"{display_symbol:<8} | {token['amount']:>14.6f} | ${token['value']:>8.2f} | "
+                      f"{chain_display:<12} | {network_type}")
         
-        print("="*60)
+        print("="*80)
+        
+        # Show WBTC summary
+        wbtc_tokens = [
+            token for token in portfolio.get('tokens', [])
+            if token.get('symbol') == 'WBTC' or agent.detector.is_wbtc_address(token['token'])
+        ]
+        
+        if wbtc_tokens:
+            total_wbtc_amount = sum(token['amount'] for token in wbtc_tokens)
+            total_wbtc_value = sum(token['value'] for token in wbtc_tokens)
+            wbtc_percentage = (total_wbtc_value / portfolio.get('totalValue', 1)) * 100
+            
+            print(f"\n₿ BITCOIN SUMMARY:")
+            print("-" * 40)
+            print(f"Total WBTC Amount: {total_wbtc_amount:.8f} WBTC")
+            print(f"Total WBTC Value:  ${total_wbtc_value:.2f}")
+            print(f"BTC Allocation:    {wbtc_percentage:.1f}%")
+            
+            if len(wbtc_tokens) > 1:
+                print(f"\n🌐 Distribution across {len(wbtc_tokens)} chains:")
+                for token in wbtc_tokens:
+                    specific_chain = token.get('specificChain', 'unknown')
+                    chain_pct = (token['value'] / total_wbtc_value) * 100
+                    chain_display = agent.detector.format_chain_display_name(specific_chain)
+                    print(f"  {chain_display}: "
+                          f"{token['amount']:.6f} WBTC ({chain_pct:.1f}%)")
         
     except Exception as e:
         logger.error(f"❌ Failed to get portfolio: {e}")

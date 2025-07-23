@@ -16,13 +16,14 @@ from datetime import datetime
 from config import Config
 from api_client import RecallAPIClient
 from trading_engine import TradingEngine
+from token_detector import MultiChainTokenDetector
 
-# Configure logging
+# Configure logging without emojis for Windows compatibility
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('btc_agent.log'),
+        logging.FileHandler('btc_agent.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -31,20 +32,26 @@ logger = logging.getLogger(__name__)
 class PortfolioAnalyzer:
     """Analyzes portfolio distribution and calculates rebalancing needs"""
     
-    @staticmethod
-    def analyze_chain_distribution(portfolio: Dict) -> Dict[str, float]:
+    def __init__(self):
+        self.detector = MultiChainTokenDetector()
+    
+    def analyze_chain_distribution(self, portfolio: Dict) -> Dict[str, float]:
         """Analyze current WBTC distribution across chains"""
         chain_values = {}
         total_wbtc_value = 0
         
         for token_info in portfolio.get("tokens", []):
-            if token_info["token"].lower() == Config.TOKENS["WBTC"].lower():
-                chain = token_info.get("chain", "ethereum")
+            token_address = token_info["token"]
+            chain_hint = token_info.get("chain", "evm")
+            
+            # Use multi-chain detection to identify WBTC
+            if self.detector.is_wbtc_address(token_address):
+                symbol, specific_chain = self.detector.detect_token_and_chain(token_address, chain_hint)
                 value = token_info["value"]
                 
-                if chain not in chain_values:
-                    chain_values[chain] = 0
-                chain_values[chain] += value
+                if specific_chain not in chain_values:
+                    chain_values[specific_chain] = 0
+                chain_values[specific_chain] += value
                 total_wbtc_value += value
         
         # Calculate percentages
@@ -53,11 +60,10 @@ class PortfolioAnalyzer:
             for chain, value in chain_values.items():
                 chain_percentages[chain] = value / total_wbtc_value
         
-        logger.info(f"📊 Current WBTC distribution: {chain_percentages}")
+        logger.info(f"Current WBTC distribution: {chain_percentages}")
         return chain_percentages
     
-    @staticmethod
-    def calculate_rebalance_trades(current_distribution: Dict[str, float], 
+    def calculate_rebalance_trades(self, current_distribution: Dict[str, float], 
                                  total_wbtc_value: float) -> list:
         """Calculate trades needed to rebalance across chains"""
         trades_needed = []
@@ -83,8 +89,9 @@ class PortfolioAnalyzer:
                         "action": "buy" if value_diff > 0 else "sell"
                     })
                     
-                    logger.info(f"🎯 {chain_config.name}: {current_pct*100:.1f}% → {target_pct*100:.1f}% "
-                              f"({'⬆️' if value_diff > 0 else '⬇️'} ${abs(value_diff):.2f})")
+                    direction = "UP" if value_diff > 0 else "DOWN"
+                    logger.info(f"REBALANCE {chain_config.name}: {current_pct*100:.1f}% -> {target_pct*100:.1f}% "
+                              f"({direction} ${abs(value_diff):.2f})")
         
         return trades_needed
 
@@ -97,37 +104,38 @@ class BitcoinMaximalistAgent:
         self.api = RecallAPIClient(api_key, self.base_url)
         self.trading = TradingEngine(self.api)
         self.analyzer = PortfolioAnalyzer()
+        self.detector = MultiChainTokenDetector()
         
-        logger.info("🚀 Bitcoin Maximalist Agent initialized")
-        logger.info(f"📊 Target allocations: {[f'{c.name}: {c.target_allocation*100:.0f}%' for c in Config.CHAINS.values()]}")
+        logger.info("Bitcoin Maximalist Agent initialized")
+        logger.info(f"Target allocations: {[f'{c.name}: {c.target_allocation*100:.0f}%' for c in Config.CHAINS.values()]}")
     
     def run_strategy(self) -> Dict:
         """Execute the complete Bitcoin maximalist strategy"""
-        logger.info("🟡 Starting Bitcoin Maximalist Strategy Execution")
+        logger.info("Starting Bitcoin Maximalist Strategy Execution")
         
         try:
-            # Step 1: Get current portfolio
-            logger.info("📊 Fetching current portfolio...")
-            portfolio = self.api.get_portfolio()
+            # Step 1: Get current portfolio with enhanced token information
+            logger.info("Fetching current portfolio...")
+            portfolio = self.api.get_enhanced_portfolio()
             initial_value = portfolio.get("totalValue", 0)
-            logger.info(f"💰 Total portfolio value: ${initial_value:.2f}")
+            logger.info(f"Total portfolio value: ${initial_value:.2f}")
             
             # Step 2: Convert all tokens to WBTC
-            logger.info("🔄 Converting all holdings to WBTC...")
+            logger.info("Converting all holdings to WBTC...")
             conversion_trades = self.trading.convert_to_wbtc(portfolio)
             
             # Wait for trades to settle
             if conversion_trades:
-                logger.info("⏳ Waiting for conversion trades to settle...")
+                logger.info("Waiting for conversion trades to settle...")
                 time.sleep(Config.SETTLE_DELAY)
             
             # Step 3: Get updated portfolio and analyze distribution
-            updated_portfolio = self.api.get_portfolio()
+            updated_portfolio = self.api.get_enhanced_portfolio()
             current_distribution = self.analyzer.analyze_chain_distribution(updated_portfolio)
             
             total_wbtc_value = sum([
                 token["value"] for token in updated_portfolio.get("tokens", [])
-                if token["token"].lower() == Config.TOKENS["WBTC"].lower()
+                if token.get("symbol") == "WBTC" or self.detector.is_wbtc_address(token["token"])
             ])
             
             # Step 4: Execute rebalancing if needed
@@ -135,10 +143,10 @@ class BitcoinMaximalistAgent:
             if total_wbtc_value > 0:
                 trades_needed = self.analyzer.calculate_rebalance_trades(current_distribution, total_wbtc_value)
                 if trades_needed:
-                    logger.info(f"🔄 Executing {len(trades_needed)} rebalance trades...")
+                    logger.info(f"Executing {len(trades_needed)} rebalance trades...")
                     rebalance_trades = self.trading.execute_rebalance_trades(trades_needed)
                 else:
-                    logger.info("✅ Portfolio already balanced within threshold")
+                    logger.info("Portfolio already balanced within threshold")
             
             # Step 5: Final results
             final_portfolio = self.api.get_portfolio()
@@ -154,14 +162,14 @@ class BitcoinMaximalistAgent:
                 "timestamp": datetime.now().isoformat()
             }
             
-            logger.info("🎉 Strategy execution completed successfully!")
-            logger.info(f"📈 Portfolio value: ${initial_value:.2f} → ${final_value:.2f} "
+            logger.info("Strategy execution completed successfully!")
+            logger.info(f"Portfolio value: ${initial_value:.2f} → ${final_value:.2f} "
                        f"({final_value - initial_value:+.2f})")
             
             return result
             
         except Exception as e:
-            logger.error(f"❌ Strategy execution failed: {e}")
+            logger.error(f"Strategy execution failed: {e}")
             raise
     
     def get_status(self) -> Dict:
@@ -172,7 +180,7 @@ class BitcoinMaximalistAgent:
             
             wbtc_tokens = [
                 token for token in portfolio.get("tokens", [])
-                if token["token"].lower() == Config.TOKENS["WBTC"].lower()
+                if self.detector.is_wbtc_address(token["token"])
             ]
             
             total_wbtc_amount = sum(token["amount"] for token in wbtc_tokens)
@@ -192,14 +200,14 @@ class BitcoinMaximalistAgent:
             }
             
         except Exception as e:
-            logger.error(f"❌ Failed to get status: {e}")
+            logger.error(f"Failed to get status: {e}")
             return {"error": str(e)}
 
 def main():
     """Main execution function"""
     api_key = os.getenv("RECALL_API_KEY")
     if not api_key:
-        logger.error("❌ RECALL_API_KEY environment variable not set")
+        logger.error("RECALL_API_KEY environment variable not set")
         return
     
     agent = BitcoinMaximalistAgent(api_key)
@@ -211,12 +219,12 @@ def main():
         with open(f"btc_agent_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "w") as f:
             json.dump(result, f, indent=2)
         
-        logger.info("📝 Results saved to file")
+        logger.info("Results saved to file")
         
     except KeyboardInterrupt:
-        logger.info("⏹️ Strategy execution interrupted by user")
+        logger.info("Strategy execution interrupted by user")
     except Exception as e:
-        logger.error(f"❌ Fatal error: {e}")
+        logger.error(f"Fatal error: {e}")
 
 if __name__ == "__main__":
     main()

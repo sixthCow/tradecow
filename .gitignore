@@ -2,3 +2,4 @@
 /recall/.venv
 recall/.env
 /recall/__pycache__
+recall/btc_agent.log

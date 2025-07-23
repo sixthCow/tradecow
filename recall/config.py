@@ -4,6 +4,7 @@ Configuration and constants for the Bitcoin Maximalist Trading Agent
 
 from dataclasses import dataclass
 from typing import Dict
+from token_detector import MultiChainTokenDetector
 
 @dataclass
 class ChainConfig:
@@ -26,19 +27,16 @@ class TokenBalance:
 class Config:
     """Agent configuration constants"""
     
-    # Token addresses (mainnet addresses work in sandbox)
-    TOKENS = {
-        "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", 
-        "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-    }
+    # Use multi-chain token detector for addresses
+    TOKENS = MultiChainTokenDetector.TOKEN_ADDRESSES
     
     # Chain configurations with target allocations
     CHAINS = {
-        "ethereum": ChainConfig("Ethereum", "evm", "eth", 0.40),
+        "ethereum": ChainConfig("Ethereum", "evm", "ethereum", 0.30),
         "arbitrum": ChainConfig("Arbitrum", "evm", "arbitrum", 0.25),
         "optimism": ChainConfig("Optimism", "evm", "optimism", 0.20),
-        "base": ChainConfig("Base", "evm", "base", 0.15)
+        "base": ChainConfig("Base", "evm", "base", 0.15),
+        "solana": ChainConfig("Solana", "svm", "solana", 0.10)  # Add Solana support
     }
     
     # Trading parameters
