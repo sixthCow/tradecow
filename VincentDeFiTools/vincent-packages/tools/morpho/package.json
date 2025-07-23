@@ -1,0 +1,43 @@
+{
+  "name": "@lit-protocol/vincent-tool-morpho",
+  "version": "0.0.2",
+  "description": "A Vincent tool for Morpho Vault operations (Deposit, Withdraw)",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npm run action:build && tsc && npm run action:deploy",
+    "action:build": "vincent-scaffold pkg build",
+    "action:deploy": "sh -c '[ -f .env ] && dotenv -e .env -- vincent-scaffold pkg deploy || dotenv -e ../../../.env -- vincent-scaffold pkg deploy'",
+    "clean": "vincent-scaffold pkg clean",
+    "vault-search": "npx tsx examples/vault-search.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@lit-protocol/vincent-scaffold-sdk": "^1.1.6",
+    "@lit-protocol/vincent-tool-sdk": "^1.0.2",
+    "@uniswap/token-lists": "^1.0.0-beta.34",
+    "ethers": "^5.7.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./action": "./bin/generated/lit-action.js"
+  },
+  "files": [
+    "dist",
+    "src/generated"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
